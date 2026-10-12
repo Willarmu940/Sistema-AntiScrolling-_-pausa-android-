@@ -1,0 +1,4 @@
+<resources>
+    <string name="svc_label">Pausa</string>
+    <string name="svc_desc">Pausa solo detecta que estás deslizando de forma continua en redes sociales para sugerirte una pausa. No lee el contenido de la pantalla ni lo envía a ningún servidor.</string>
+</resources>
