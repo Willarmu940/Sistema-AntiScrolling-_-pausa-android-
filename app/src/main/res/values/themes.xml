@@ -1,0 +1,18 @@
+<resources>
+    <style name="Theme.Pausa" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/moss</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/muted</item>
+    </style>
+
+    <!-- Pantalla de fricción: siempre oscura, con barras del sistema del mismo color -->
+    <style name="Theme.Pausa.Friction" parent="Theme.Pausa">
+        <item name="android:windowBackground">@color/ink</item>
+        <item name="android:statusBarColor">@color/ink</item>
+        <item name="android:navigationBarColor">@color/ink</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

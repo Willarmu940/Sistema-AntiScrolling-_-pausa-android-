@@ -1,0 +1,14 @@
+<resources>
+    <!-- Paleta fija -->
+    <color name="ink">#12302F</color>
+    <color name="mist">#EAF0EC</color>
+    <color name="moss">#3F7D58</color>
+    <color name="amber">#E9A92F</color>
+
+    <!-- Paleta que cambia entre modo claro y oscuro -->
+    <color name="bg">#EAF0EC</color>
+    <color name="card">#FFFFFF</color>
+    <color name="text">#12302F</color>
+    <color name="muted">#5D7471</color>
+    <color name="line">#D3DFD9</color>
+</resources>
