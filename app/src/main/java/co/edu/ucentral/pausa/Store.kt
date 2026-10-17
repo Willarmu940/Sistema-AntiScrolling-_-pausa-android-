@@ -45,6 +45,18 @@ class Store(context: Context) {
         get() = p.getLong("snooze", 0L)
         set(v) { p.edit().putLong("snooze", v).apply() }
 
+    // ---- Tiempo libre (opcional): periodos sin pantalla de fricción ----
+    var freeUntil: Long
+        get() = p.getLong("free_until", 0L)
+        set(v) { p.edit().putLong("free_until", v).apply() }
+
+    fun freeUsesToday(): Int = p.getInt("free_uses_${LocalDate.now()}", 0)
+
+    fun addFreeUse() {
+        val k = "free_uses_${LocalDate.now()}"
+        p.edit().putInt(k, p.getInt(k, 0) + 1).apply()
+    }
+
     // ---- Perfil de hábitos (encuesta inicial, beta) ----
     var surveyDone: Boolean
         get() = p.getBoolean("sv_done", false)
@@ -95,4 +107,9 @@ class Store(context: Context) {
         (p.getString("log", "") ?: "").split("\n").filter { it.isNotBlank() }
 
     fun reset() { p.edit().clear().apply() }
+
+    companion object {
+        /** Máximo de periodos de tiempo libre por día, para que no se use como escape constante. */
+        const val MAX_FREE_USES = 3
+    }
 }

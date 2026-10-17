@@ -8,6 +8,7 @@ import android.os.Process
 import android.provider.Settings
 import android.view.View
 import android.widget.SeekBar
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import co.edu.ucentral.pausa.databinding.ActivityMainBinding
 import co.edu.ucentral.pausa.databinding.ItemAppBinding
@@ -29,6 +30,12 @@ class MainActivity : AppCompatActivity() {
         b.btnUsage.setOnClickListener { startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
         b.btnDemo.setOnClickListener { startActivity(Intent(this, DemoFeedActivity::class.java)) }
         b.btnSurvey.setOnClickListener { startActivity(Intent(this, OnboardingActivity::class.java)) }
+        b.btnFree.setOnClickListener { askFreeTime() }
+        b.btnFreeCancel.setOnClickListener {
+            store.freeUntil = 0L
+            store.log("Tiempo libre cancelado")
+            render()
+        }
         b.btnReset.setOnClickListener {
             store.reset()
             buildToggles()
@@ -64,6 +71,30 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         render()
+    }
+
+    /** Tiempo libre (opcional): periodo en el que Pausa no interrumpe. Tiene tope diario. */
+    private fun askFreeTime() {
+        if (store.freeUsesToday() >= Store.MAX_FREE_USES) {
+            AlertDialog.Builder(this)
+                .setTitle("Límite de hoy")
+                .setMessage("Ya usaste ${Store.MAX_FREE_USES} periodos de tiempo libre hoy. Mañana podrás activar más.")
+                .setPositiveButton("Entendido", null)
+                .show()
+            return
+        }
+        val labels = arrayOf("5 minutos", "15 minutos", "30 minutos", "1 hora")
+        val minutes = intArrayOf(5, 15, 30, 60)
+        AlertDialog.Builder(this)
+            .setTitle("Tiempo libre: Pausa no te interrumpirá")
+            .setItems(labels) { _, which ->
+                store.freeUntil = System.currentTimeMillis() + minutes[which] * 60_000L
+                store.addFreeUse()
+                store.log("Tiempo libre: ${labels[which]}")
+                render()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     /** RF-02: un interruptor por app para elegir cuáles se vigilan. */
@@ -129,6 +160,19 @@ class MainActivity : AppCompatActivity() {
         b.tvClosed.text = "${store.closed} pausas\naceptadas"
         b.tvMedals.text = Medals.ALL.joinToString("\n") { m ->
             (if (m.earned(store)) "🏅 " else "🔒 ") + m.name + " — " + m.description
+        }
+
+        // Tiempo libre
+        val remainingMs = store.freeUntil - System.currentTimeMillis()
+        if (remainingMs > 0) {
+            val mins = (remainingMs + 59_999L) / 60_000L
+            b.tvFreeStatus.text = "Tiempo libre activo: quedan $mins min. Pausa no te interrumpirá."
+            b.btnFree.visibility = View.GONE
+            b.btnFreeCancel.visibility = View.VISIBLE
+        } else {
+            b.tvFreeStatus.text = "Sin tiempo libre activo. Usos hoy: ${store.freeUsesToday()} de ${Store.MAX_FREE_USES}."
+            b.btnFree.visibility = View.VISIBLE
+            b.btnFreeCancel.visibility = View.GONE
         }
 
         // Límites

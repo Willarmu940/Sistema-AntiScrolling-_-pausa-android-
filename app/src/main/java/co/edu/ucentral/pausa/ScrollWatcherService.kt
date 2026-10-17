@@ -46,7 +46,9 @@ class ScrollWatcherService : AccessibilityService() {
         lastPkg = pkg
         lastScroll = now
 
-        if (System.currentTimeMillis() < store.snoozeUntil) return   // pausa de gracia activa
+        // Pausa de gracia (tras "Seguir") o tiempo libre elegido por el usuario
+        val t = System.currentTimeMillis()
+        if (t < store.snoozeUntil || t < store.freeUntil) return
         if (now - streakStart >= store.thresholdSec * 1000L) {
             streakStart = now
             store.interventions = store.interventions + 1

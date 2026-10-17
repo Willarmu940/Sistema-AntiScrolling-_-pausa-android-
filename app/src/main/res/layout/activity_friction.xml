@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:gravity="center"
-        android:textColor="#B8C9C3"
+        android:textColor="#A8A8A8"
         android:textSize="15sp" />
 
     <FrameLayout
