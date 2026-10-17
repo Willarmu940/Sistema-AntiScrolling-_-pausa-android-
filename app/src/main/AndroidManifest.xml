@@ -23,6 +23,9 @@
 
         <activity android:name=".DemoFeedActivity" android:exported="false" />
 
+        <!-- Encuesta inicial de perfil de hábitos (beta) -->
+        <activity android:name=".OnboardingActivity" android:exported="false" />
+
         <!-- RF-04 / RF-07: pantalla de fricción que no se puede cerrar con "atrás" -->
         <activity
             android:name=".FrictionActivity"

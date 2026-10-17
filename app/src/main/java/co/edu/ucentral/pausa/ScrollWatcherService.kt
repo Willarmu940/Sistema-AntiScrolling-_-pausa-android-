@@ -8,7 +8,8 @@ import android.view.accessibility.AccessibilityEvent
 /**
  * RF-03: detecta sesiones de scroll continuo.
  * Una "racha" continúa mientras los eventos de scroll lleguen con menos de IDLE_MS entre sí.
- * Al superar el umbral configurado se lanza la pantalla de fricción (RF-04).
+ * En apps de videos cortos el usuario se queda varios segundos en cada video, por eso la
+ * tolerancia es de 15 s. Al superar el umbral configurado se lanza la pantalla de fricción (RF-04).
  * Solo se miden eventos de scroll; no se lee el contenido de la pantalla.
  */
 class ScrollWatcherService : AccessibilityService() {
@@ -33,6 +34,8 @@ class ScrollWatcherService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null || event.eventType != AccessibilityEvent.TYPE_VIEW_SCROLLED) return
         val pkg = event.packageName?.toString() ?: return
+        if (!store.isEnabled(pkg)) return                 // RF-02: app desactivada por el usuario
+
         val now = SystemClock.elapsedRealtime()
 
         if (pkg != lastPkg || now - lastScroll > IDLE_MS) {
@@ -57,7 +60,7 @@ class ScrollWatcherService : AccessibilityService() {
     }
 
     companion object {
-        const val IDLE_MS = 3000L
+        const val IDLE_MS = 15_000L
         var instance: ScrollWatcherService? = null
     }
 }

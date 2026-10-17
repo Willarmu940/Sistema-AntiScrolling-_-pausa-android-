@@ -11,6 +11,7 @@ import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import co.edu.ucentral.pausa.databinding.ActivityMainBinding
 import co.edu.ucentral.pausa.databinding.ItemAppBinding
+import co.edu.ucentral.pausa.databinding.ItemToggleBinding
 import java.util.Calendar
 
 class MainActivity : AppCompatActivity() {
@@ -27,10 +28,14 @@ class MainActivity : AppCompatActivity() {
         b.btnA11y.setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
         b.btnUsage.setOnClickListener { startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
         b.btnDemo.setOnClickListener { startActivity(Intent(this, DemoFeedActivity::class.java)) }
-        b.btnReset.setOnClickListener { store.reset(); render() }
+        b.btnSurvey.setOnClickListener { startActivity(Intent(this, OnboardingActivity::class.java)) }
+        b.btnReset.setOnClickListener {
+            store.reset()
+            buildToggles()
+            render()
+        }
 
-        // RF-02 (parcial): umbral configurable entre 10 y 60 segundos
-        b.seekTh.progress = store.thresholdSec - 10
+        // RF-02: umbral de scroll continuo configurable (10 a 60 s en la demo)
         b.seekTh.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) {
                 if (fromUser) { store.thresholdSec = p + 10; render() }
@@ -38,12 +43,39 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(s: SeekBar?) {}
             override fun onStopTrackingTouch(s: SeekBar?) {}
         })
+
+        // RF-02: meta diaria configurable (15 a 240 min, de 15 en 15)
+        b.seekGoal.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) {
+                if (fromUser) { store.goalMin = (p + 1) * 15; render() }
+            }
+            override fun onStartTrackingTouch(s: SeekBar?) {}
+            override fun onStopTrackingTouch(s: SeekBar?) {}
+        })
+
+        buildToggles()
+
+        // Primera vez: ofrecer la encuesta de perfil
+        if (!store.surveyDone && !store.surveySkipped) {
+            startActivity(Intent(this, OnboardingActivity::class.java))
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        b.seekTh.progress = store.thresholdSec - 10
         render()
+    }
+
+    /** RF-02: un interruptor por app para elegir cuáles se vigilan. */
+    private fun buildToggles() {
+        b.llToggles.removeAllViews()
+        Watched.apps.forEach { (pkg, name) ->
+            val row = ItemToggleBinding.inflate(layoutInflater, b.llToggles, false)
+            row.tvAppName.text = name
+            row.sw.isChecked = store.isEnabled(pkg)
+            row.sw.setOnCheckedChangeListener { _, checked -> store.setEnabled(pkg, checked) }
+            b.llToggles.addView(row.root)
+        }
     }
 
     private fun render() {
@@ -80,9 +112,30 @@ class MainActivity : AppCompatActivity() {
         b.tvGoal.text = "de ${store.goalMin} min de meta diaria"
         b.progress.progress = (totalMs * 100 / (store.goalMin * 60_000L)).coerceAtMost(100).toInt()
 
+        // Perfil de hábitos (beta)
+        val profile = Profiles.byKey(store.profileKey)
+        if (profile != null) {
+            b.tvProfileName.text = "${profile.name} · uso ${Profiles.levelName(store.riskLevel)}"
+            b.tvProfileDesc.text = profile.tip
+            b.btnSurvey.text = "Rehacer la encuesta"
+        } else {
+            b.tvProfileName.text = "Aún sin perfil"
+            b.tvProfileDesc.text = "Responde 8 preguntas cortas para personalizar los avisos."
+            b.btnSurvey.text = "Hacer la encuesta"
+        }
+
+        // Recompensas y medallas (RF-06)
         b.tvPoints.text = store.points.toString()
         b.tvClosed.text = "${store.closed} pausas\naceptadas"
+        b.tvMedals.text = Medals.ALL.joinToString("\n") { m ->
+            (if (m.earned(store)) "🏅 " else "🔒 ") + m.name + " — " + m.description
+        }
+
+        // Límites
         b.tvTh.text = "Intervenir tras ${store.thresholdSec} s de scroll continuo"
+        b.seekTh.progress = store.thresholdSec - 10
+        b.tvGoalSet.text = "Meta diaria: ${store.goalMin} min"
+        b.seekGoal.progress = (store.goalMin / 15 - 1).coerceIn(0, 15)
 
         val log = store.logs()
         b.tvLog.text = if (log.isEmpty()) "Aún no hay intervenciones." else log.joinToString("\n")

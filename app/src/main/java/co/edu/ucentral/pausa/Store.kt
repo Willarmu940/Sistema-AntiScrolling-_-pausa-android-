@@ -20,7 +20,7 @@ object Watched {
 class Store(context: Context) {
     private val p = context.getSharedPreferences("pausa", Context.MODE_PRIVATE)
 
-    /** Segundos de scroll continuo antes de intervenir. Demo: 20 s. Producción: 1200 s (20 min). */
+    /** Segundos de scroll continuo antes de intervenir. Demo: segundos. Versión real: minutos. */
     var thresholdSec: Int
         get() = p.getInt("th", 20)
         set(v) { p.edit().putInt("th", v).apply() }
@@ -45,6 +45,37 @@ class Store(context: Context) {
         get() = p.getLong("snooze", 0L)
         set(v) { p.edit().putLong("snooze", v).apply() }
 
+    // ---- Perfil de hábitos (encuesta inicial, beta) ----
+    var surveyDone: Boolean
+        get() = p.getBoolean("sv_done", false)
+        set(v) { p.edit().putBoolean("sv_done", v).apply() }
+
+    var surveySkipped: Boolean
+        get() = p.getBoolean("sv_skip", false)
+        set(v) { p.edit().putBoolean("sv_skip", v).apply() }
+
+    /** Clave del perfil dominante (noche, foco, estimulo, auto) o "" si no hay. */
+    var profileKey: String
+        get() = p.getString("profile", "") ?: ""
+        set(v) { p.edit().putString("profile", v).apply() }
+
+    /** 0 = bajo, 1 = moderado, 2 = alto. */
+    var riskLevel: Int
+        get() = p.getInt("risk", 0)
+        set(v) { p.edit().putInt("risk", v).apply() }
+
+    /** Respuestas de la encuesta separadas por coma (solo en este dispositivo). */
+    var surveyAnswers: String
+        get() = p.getString("answers", "") ?: ""
+        set(v) { p.edit().putString("answers", v).apply() }
+
+    // ---- Apps vigiladas (RF-02) ----
+    fun isEnabled(pkg: String): Boolean = p.getBoolean("en_$pkg", true)
+
+    fun setEnabled(pkg: String, enabled: Boolean) {
+        p.edit().putBoolean("en_$pkg", enabled).apply()
+    }
+
     private fun day() = LocalDate.now().toString()
 
     fun addUsage(pkg: String, ms: Long) {
@@ -61,7 +92,7 @@ class Store(context: Context) {
     }
 
     fun logs(): List<String> =
-        p.getString("log", "")!!.split("\n").filter { it.isNotBlank() }
+        (p.getString("log", "") ?: "").split("\n").filter { it.isNotBlank() }
 
     fun reset() { p.edit().clear().apply() }
 }
